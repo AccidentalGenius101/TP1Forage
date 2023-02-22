@@ -1,9 +1,6 @@
 import pandas as pd
 import re
-from sklearn.decomposition import PCA
-from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import StandardScaler
-import matplotlib.pyplot as plt
 
 df = pd.read_csv("data/speeddating.csv")
 
@@ -12,48 +9,27 @@ print(df.head())
 print(df.info())
 print(df.describe())
 
+# On enlève la première colonne qui ne contient rien
+df = df.drop(columns=["has_null", "race", "race_o"])
 
-# On enlève les colonnes qui sont seulement une différence de deux autres colonnes
+# On convertit les colonnes binaire en format true/false
 for column in df:
+    i = 0
     if re.search("^d_", column):
         df = df.drop(columns=[str(column)])
+    else:
+        for x in df[str(column)]:
+            if x == 'b\'0\'' or x == 'b\'female\'':
+                x = False
+            elif x == 'b\'1\'' or x == 'b\'male\'':
+                x = True
+            df.at[i, str(column)] = x
+            i += 1
 
-# On enlève la première colonne qui ne contient rien
-df = df.drop(columns=["has_null"])
-
-# On enlève les colonnes ayant plus de 400 valeurs manquantes
-missing_val = df.isnull().sum().sort_values(ascending=False)
-for x in missing_val:
-    if x >= 400:
-        column = missing_val[missing_val == x].index[0]
-        df = df.drop(columns=[str(column)])
-print(df.isnull().sum().sort_values(ascending=False))
-
-# On enlève les observations ayant des valeurs manquantes
-df = df.dropna()
-
-# Vérification des valeurs aberrantes
-df_num = df.select_dtypes(exclude='object')
-df_num.boxplot()
-# plt.show()
-
-# Comme la plupart des valeurs sont des valeurs de note entrée
-# par les participants on considère qu'il n'y a pas de valeurs aberrantes
-
-# Encode les variables catégorielles pour la pca
-df_cat = df.select_dtypes(include='object')
-df = df.drop(df_cat, axis=1)
-enc = OneHotEncoder()
-encoder_df = pd.DataFrame(enc.fit_transform(df_cat).toarray())
-final_df = df.join(encoder_df)
-final_df = final_df.dropna()
-
-# Standardise les données pour utiliser la PCA
-final_df = StandardScaler().fit_transform(final_df)
-
-# PCA pour réduire le nombre de variables
-pca = PCA(.80)
-final_df = pd.DataFrame(pca.fit_transform(final_df))
+df_num = df.select_dtypes(include=['float64'])
+df_
+ss = StandardScaler()
+df_scaled = pd.DataFrame(ss.fit_transform(df_num), columns = df.columns)
 
 # Dataframe convertit en csv
-final_df.to_csv("data/cleaned_speeddating.csv")
+df.to_csv("data/cleaned_speeddating.csv")
