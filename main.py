@@ -33,10 +33,12 @@ graph.render("DT")
 # Evaluating model
 scoring = ['accuracy', 'precision', 'f1', 'recall', 'roc_auc']
 dt_results = cross_validate(dt, X_test, y_test, scoring=scoring)
-print(dt_results)
+
+for key in dt_results:
+    print("Model: DT " + str(key) + ": " + str(dt_results[str(key)].mean()*100))
 
 end = time.time()
-print("Time for DT: " + str(end - start))
+print("Time for DT: " + str(end - start) + " Node_count: " + str(dt.tree_.node_count) + " Max_depth: " + str(dt.tree_.max_depth)+ " n_leaves: " + str(dt.tree_.n_leaves))
 
 # -------Evaluating incremental tree-------
 
@@ -47,22 +49,19 @@ y = df.iloc[:, -1]
 df = stream.iter_pandas(X, y)
 
 # Différent modèles
-efdt = tree.ExtremelyFastDecisionTreeClassifier()
-vfdt = tree.HoeffdingTreeClassifier()
-cvfdt = tree.HoeffdingAdaptiveTreeClassifier()
-modelList = [efdt, vfdt, cvfdt]
+modelList = [tree.ExtremelyFastDecisionTreeClassifier(), tree.HoeffdingTreeClassifier(),
+             tree.HoeffdingAdaptiveTreeClassifier()]
 
 # Différentes métriques
-accuracy = metrics.Accuracy()
-precision = metrics.Precision()
-recall = metrics.Recall()
-f1 = metrics.F1()
-rocauc = metrics.ROCAUC()
-metricsList = [accuracy, precision, recall, f1, rocauc]
+metricsList = [metrics.Accuracy(), metrics.Precision(), metrics.Recall(), metrics.F1(), metrics.ROCAUC()]
 
-for model in modelList:
-    for metric in metricsList:
-        evaluate.progressive_val_score(dataset=df, model=model, metric=metric, print_every=1000, show_time=True,
-                                       show_memory=True)
-        evaluate.reset()
-        print("Model: " + str(model))
+for metric in range(len(metricsList)):
+    for model in range(len(modelList)):
+        df = stream.iter_pandas(X, y)
+        modelList = [tree.ExtremelyFastDecisionTreeClassifier(), tree.HoeffdingTreeClassifier(),
+                     tree.HoeffdingAdaptiveTreeClassifier()]
+        metricsList = [metrics.Accuracy(), metrics.Precision(), metrics.Recall(), metrics.F1(), metrics.ROCAUC()]
+        evaluate.progressive_val_score(dataset=df, model=modelList[model], metric=metricsList[metric], print_every=8378,
+                                       show_time=True, show_memory=True)
+        print("Model: " + str(modelList[model]) + " " + str(metricsList[metric]) + ": ")
+        print(modelList[model].summary)
